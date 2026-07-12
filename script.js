@@ -512,6 +512,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!reduceMotion && typeof window.Lenis === 'function') {
     try {
       lenis = new Lenis({ lerp: 0.095, wheelMultiplier: 1, smoothWheel: true });
+      window.__lenis = lenis; /* exposed for debugging */
       (function rafLenis(t) { lenis.raf(t); requestAnimationFrame(rafLenis); })(0);
     } catch (e) { lenis = null; }
   }
