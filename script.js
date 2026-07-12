@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
     lightbox.classList.add('open');
   }
   function openLightboxVideo(src, poster) {
-    lightboxContent.innerHTML = '<video src="' + src + '" poster="' + (poster || '') + '" controls autoplay playsinline></video>';
+    lightboxContent.innerHTML = '<video src="' + src + '" poster="' + (poster || '') + '" controls autoplay loop playsinline></video>';
     lightbox.classList.add('open');
   }
   function closeLightbox() {
@@ -311,32 +311,6 @@ document.addEventListener('DOMContentLoaded', function () {
     render();
   });
 
-  /* ---------- KO flash overlay (boxing hero video loops every ~8s) ----------
-     A subtle teaser builds anticipation early in the loop, then the big
-     swirling K.O. badge pops right on the beat, ~2s before the loop restarts. */
-  var koFlash = document.getElementById('koFlash');
-  var koTeaser = document.getElementById('koTeaser');
-  if (koFlash) {
-    var KO_LOOP_MS = 8000;   // durée de la boucle vidéo
-    var TEASE_AT = 1200;     // apparition du teaser, tôt dans la boucle
-    var KO_AT = 6000;        // le K.O. arrive ~2s avant la fin (8s)
-    var KO_HIDE_AT = 7700;   // masquage juste avant la reprise en boucle
-    function cycleKoFlash() {
-      if (koTeaser) {
-        setTimeout(function () { koTeaser.classList.add('show'); }, TEASE_AT);
-      }
-      setTimeout(function () {
-        if (koTeaser) koTeaser.classList.remove('show');
-        koFlash.classList.remove('show');
-        void koFlash.offsetWidth; /* force reflow so the swirl-in animation replays every loop */
-        koFlash.classList.add('show');
-      }, KO_AT);
-      setTimeout(function () { koFlash.classList.remove('show'); }, KO_HIDE_AT);
-    }
-    cycleKoFlash();
-    setInterval(cycleKoFlash, KO_LOOP_MS);
-  }
-
   /* ---------- Hero fist "becomes the text" reveal (one-time) ----------
      Only the headline shows at first. ~1s before the boxing video's first
      loop ends (7s of 8s), a fist appears dead-center over the video, punches
@@ -376,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (fjordSection && fjordIntroEl) {
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) {
-      if (fjordPhotoEl) fjordPhotoEl.style.opacity = 1;
+      if (fjordPhotoEl) { fjordPhotoEl.style.opacity = 1; fjordPhotoEl.style.pointerEvents = 'auto'; }
     } else {
       var ticking = false;
       function updateFjordParallax() {
@@ -397,6 +371,7 @@ document.addEventListener('DOMContentLoaded', function () {
           var photoProgress = Math.min(Math.max((progress - 0.6) / 0.3, 0), 1);
           fjordPhotoEl.style.opacity = photoProgress;
           fjordPhotoEl.style.transform = 'translate(-50%, ' + ((1 - photoProgress) * 26) + 'px)';
+          fjordPhotoEl.style.pointerEvents = photoProgress > 0.1 ? 'auto' : 'none';
         }
         ticking = false;
       }

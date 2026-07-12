@@ -154,29 +154,6 @@ section{position:relative;}
 .ko-teaser.show{opacity:1;animation:ko-teaser-bob 1.5s ease-in-out infinite;}
 .ko-teaser-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(255,255,255,.2);flex-shrink:0;}
 @keyframes ko-teaser-bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
-/* KO overlay: big, swirling pop right on the KO beat, links to the boxing section */
-.ko-flash{
-  position:absolute;right:40px;bottom:44px;z-index:3;
-  display:flex;align-items:center;gap:10px;
-  background:rgba(255,255,255,.12);backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.35);border-radius:100px;
-  padding:12px 20px 12px 16px;color:#fff;text-decoration:none;
-  opacity:0;pointer-events:none;
-  transition:background .25s ease,border-color .25s ease;
-}
-.ko-flash.show{opacity:1;pointer-events:auto;animation:ko-swirl-in .75s cubic-bezier(.2,.85,.3,1.4);}
-.ko-flash:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.6);}
-.ko-flash-tag{font-weight:800;font-size:12.5px;letter-spacing:.04em;background:var(--accent);color:#0a0a12;padding:4px 10px;border-radius:100px;flex-shrink:0;}
-.ko-flash-text{font-weight:600;font-size:14px;white-space:nowrap;}
-.ko-flash-arrow{flex-shrink:0;transition:transform .25s ease;}
-.ko-flash:hover .ko-flash-arrow{transform:translateX(3px);}
-@keyframes ko-swirl-in{
-  0%{opacity:0;transform:scale(.2) rotate(-35deg) translateY(24px);}
-  60%{opacity:1;transform:scale(1.14) rotate(6deg) translateY(0);}
-  80%{transform:scale(.94) rotate(-3deg);}
-  100%{opacity:1;transform:scale(1) rotate(0deg) translateY(0);}
-}
-
 /* ---- second immersive video (Saguenay fjord), chained via a fade seam ---- */
 .hero-video-b{position:relative;width:100%;height:100vh;height:100dvh;min-height:480px;overflow:hidden;background:#0a0a12;}
 .hero-video-b-bg iframe{
@@ -200,19 +177,20 @@ section{position:relative;}
    updateFjordParallax in script.js) so it lands right as the video ends. */
 .fjord-photo-pro{
   position:absolute;left:50%;bottom:10%;z-index:2;transform:translate(-50%,0);
-  width:132px;height:132px;border-radius:50%;overflow:hidden;
+  width:152px;height:152px;border-radius:50%;overflow:hidden;
   border:4px solid rgba(255,255,255,.9);box-shadow:0 16px 40px rgba(0,0,0,.5);
-  opacity:0;pointer-events:none;will-change:opacity,transform;
+  opacity:0;pointer-events:none;will-change:opacity,transform;cursor:pointer;
+  transition:box-shadow .3s var(--ease);
 }
-.fjord-photo-pro img{width:100%;height:100%;object-fit:cover;display:block;}
-@media (max-width:640px){.fjord-photo-pro{width:96px;height:96px;bottom:7%;}}
+.fjord-photo-pro:hover{box-shadow:0 20px 50px rgba(0,0,0,.6);}
+.fjord-photo-pro img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s var(--ease);}
+.fjord-photo-pro:hover img{transform:scale(1.12);}
+@media (max-width:640px){.fjord-photo-pro{width:108px;height:108px;bottom:7%;}}
 .video-hero-scrollcue{position:absolute;bottom:22px;left:50%;z-index:4;color:#fff;opacity:.85;animation:bounce-cue 2s ease-in-out infinite;pointer-events:none;transform:translateX(-50%);}
 @keyframes bounce-cue{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,10px);}}
 @media (max-width:900px){
   .hero-immersive-content .container{max-width:100%;}
   .fjord-intro{width:92%;}
-  .ko-flash{right:22px;bottom:26px;padding:10px 16px 10px 12px;}
-  .ko-flash-text{display:none;}
   .ko-teaser{right:22px;bottom:30px;}
 }
 
@@ -269,7 +247,7 @@ section{position:relative;}
 .duo .duo-item:nth-child(1){transition-delay:0s;}
 .duo .duo-item:nth-child(2){transition-delay:.14s;}
 @media (prefers-reduced-motion:reduce){
-  .reveal,.stat-item,.video-hero-scrollcue,.ko-flash,.ko-teaser,.hero-immersive h1,.hero-reveal-rest,.hero-fist,.fjord-intro{transition:none !important;animation:none !important;opacity:1 !important;transform:none !important;filter:none !important;}
+  .reveal,.stat-item,.video-hero-scrollcue,.ko-teaser,.hero-immersive h1,.hero-reveal-rest,.hero-fist,.fjord-intro{transition:none !important;animation:none !important;opacity:1 !important;transform:none !important;filter:none !important;}
   .cloud-word,.cloud-photo{animation:none !important;}
   .hero-stage-cta,#contact-stage{animation:none !important;}
   .fjord-photo-pro{transition:none !important;opacity:1 !important;transform:none !important;}
