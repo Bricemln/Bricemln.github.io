@@ -887,6 +887,50 @@ document.addEventListener('DOMContentLoaded', function () {
     v.card = card;
   });
 
+  /* entrance: cards cascade in as the section arrives (JS-only enhancement,
+     the grid stays fully visible if anything here fails) */
+  var reduceAll = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceAll && 'IntersectionObserver' in window) {
+    try {
+      grid.classList.add('vg-anim');
+      var cardsArr = Array.prototype.slice.call(grid.children);
+      var gridIo = new IntersectionObserver(function (entries) {
+        if (!entries[0].isIntersecting) return;
+        gridIo.disconnect();
+        cardsArr.forEach(function (c, i) {
+          setTimeout(function () { c.classList.add('in'); }, i * 55);
+        });
+      }, { threshold: 0.12 });
+      gridIo.observe(grid);
+      /* absolute failsafe: never leave cards hidden */
+      setTimeout(function () { cardsArr.forEach(function (c) { c.classList.add('in'); }); }, 6000);
+    } catch (e) { grid.classList.remove('vg-anim'); }
+  }
+
+  /* soft parallax on the colour halos */
+  if (!reduceAll) {
+    var glowA = document.querySelector('.vg-glow-a');
+    var glowB = document.querySelector('.vg-glow-b');
+    var vgSec = document.querySelector('.vg-section');
+    if (glowA && glowB && vgSec) {
+      var vgDirty = true;
+      window.addEventListener('scroll', function () { vgDirty = true; }, { passive: true });
+      (function glowLoop() {
+        if (vgDirty) {
+          vgDirty = false;
+          var r = vgSec.getBoundingClientRect();
+          var vh = window.innerHeight || 800;
+          if (r.bottom > 0 && r.top < vh) {
+            var p = (r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2);
+            glowA.style.transform = 'translateY(' + (p * 70).toFixed(1) + 'px)';
+            glowB.style.transform = 'translateY(' + (p * -60).toFixed(1) + 'px)';
+          }
+        }
+        requestAnimationFrame(glowLoop);
+      })();
+    }
+  }
+
   /* ---------- particle VFX (canvas overlay) ---------- */
   var fxCanvas = null, fxCtx = null, fxParts = [], fxRunning = false;
   var reduceFx = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
