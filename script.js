@@ -561,18 +561,14 @@ document.addEventListener('DOMContentLoaded', function () {
       })();
       document.addEventListener('mousedown', function () { targetScale = 0.8; });
       document.addEventListener('mouseup', function () { targetScale = 1; });
-      var mediaSel = '.editorial-main,.editorial-inset,.duo-item,.trio-item,.gallery-main,.marquee-item,.carousel-slide,.cloud-photo';
+      var mediaSel = '.editorial-main,.editorial-inset,.duo-item,.trio-item,.gallery-main,.marquee-item,.carousel-slide,.rb-photo';
       var linkSel = 'a,button';
       document.addEventListener('mouseover', function (e) {
         if (!(e.target instanceof Element)) return;
         var onControl = e.target.closest('.carousel-arrow,.carousel-dots,.gallery-thumb,.lightbox-close');
-        var physicsItem = e.target.closest('.value-cloud.physics .cloud-word, .value-cloud.physics .cloud-photo');
-        var media = (onControl || physicsItem) ? null : e.target.closest(mediaSel);
-        var link = physicsItem ? null : e.target.closest(linkSel);
-        if (physicsItem) {
-          ring.classList.add('is-media'); ring.classList.remove('is-link');
-          if (labelEl) labelEl.textContent = 'Frappe !';
-        } else if (media) {
+        var media = onControl ? null : e.target.closest(mediaSel);
+        var link = e.target.closest(linkSel);
+        if (media) {
           ring.classList.add('is-media'); ring.classList.remove('is-link');
           if (labelEl) labelEl.textContent = media.classList.contains('cloud-photo') ? 'Découvrir' : 'Voir';
         } else if (link || onControl) {
@@ -584,155 +580,6 @@ document.addEventListener('DOMContentLoaded', function () {
       document.addEventListener('mouseleave', function () { dot.classList.add('is-hidden'); ring.classList.add('is-hidden'); });
       document.addEventListener('mouseenter', function () { dot.classList.remove('is-hidden'); ring.classList.remove('is-hidden'); });
     }
-
-    /* =========================================================
-       VALUE CLOUD MINI-GAME — physics ring (desktop only)
-       Words and photos become rigid bodies: they drop and pile
-       up when the section appears, can be grabbed and thrown,
-       and a quick click lands a punch. Powered by Matter.js,
-       loaded lazily only when the section comes near.
-    ========================================================= */
-    (function () {
-      var cloud = document.getElementById('valueCloud');
-      var hint = document.getElementById('cloudHint');
-      if (!cloud || window.innerWidth < 761) return;
-      var startedGame = false;
-      var gameIo = new IntersectionObserver(function (entries) {
-        if (entries[0].isIntersecting && !startedGame) {
-          startedGame = true;
-          gameIo.disconnect();
-          var s = document.createElement('script');
-          s.src = 'https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js';
-          s.onload = initGame;
-          document.head.appendChild(s);
-        }
-      }, { rootMargin: '300px' });
-      gameIo.observe(cloud);
-
-      function initGame() {
-        if (!window.Matter) return;
-        var M = window.Matter;
-        var W = cloud.clientWidth, H = cloud.clientHeight;
-        var cloudRect = cloud.getBoundingClientRect();
-        var items = Array.prototype.slice.call(cloud.querySelectorAll('.cloud-word, .cloud-photo'));
-        if (!items.length) return;
-
-        /* measure starting spots BEFORE flipping to physics mode */
-        var seeds = items.map(function (el) {
-          var r = el.getBoundingClientRect();
-          return {
-            el: el,
-            x: r.left - cloudRect.left + r.width / 2,
-            y: r.top - cloudRect.top + r.height / 2,
-            w: r.width, h: r.height,
-            round: el.classList.contains('cloud-photo')
-          };
-        });
-
-        cloud.classList.add('physics');
-        if (hint) hint.classList.add('on');
-
-        var engine = M.Engine.create();
-        engine.gravity.y = 1.1;
-
-        var bodies = seeds.map(function (s) {
-          var body = s.round
-            ? M.Bodies.circle(s.x, s.y, s.w / 2, { restitution: 0.55, friction: 0.08, frictionAir: 0.012 })
-            : M.Bodies.rectangle(s.x, s.y, s.w, s.h, {
-                restitution: 0.45, friction: 0.1, frictionAir: 0.012,
-                chamfer: { radius: Math.min(18, s.h / 2 - 1) }
-              });
-          body.plugin.el = s.el; body.plugin.w = s.w; body.plugin.h = s.h;
-          body.plugin.x0 = s.x; body.plugin.y0 = s.y;
-          return body;
-        });
-
-        var t = 80;
-        var walls = [
-          M.Bodies.rectangle(W / 2, H + t / 2, W + t * 4, t, { isStatic: true }),       /* floor */
-          M.Bodies.rectangle(-t / 2, H / 2 - H, t, H * 4, { isStatic: true }),          /* left  */
-          M.Bodies.rectangle(W + t / 2, H / 2 - H, t, H * 4, { isStatic: true }),       /* right */
-          M.Bodies.rectangle(W / 2, -H * 1.4 - t / 2, W + t * 4, t, { isStatic: true }) /* ceiling, far above */
-        ];
-        M.Composite.add(engine.world, bodies.concat(walls));
-
-        /* drag & throw */
-        var mouse = M.Mouse.create(cloud);
-        var mc = M.MouseConstraint.create(engine, {
-          mouse: mouse,
-          constraint: { stiffness: 0.18, damping: 0.12 }
-        });
-        M.Composite.add(engine.world, mc);
-        /* Matter's mouse hijacks the wheel: give scrolling back to the page */
-        cloud.removeEventListener('mousewheel', mouse.mousewheel);
-        cloud.removeEventListener('DOMMouseScroll', mouse.mousewheel);
-        cloud.removeEventListener('wheel', mouse.mousewheel);
-
-        /* quick click (no drag) = punch */
-        var jabs = 0;
-        var jabEl = document.getElementById('jabCount');
-        var hintText = document.getElementById('cloudHintText');
-        var downAt = 0, downX = 0, downY = 0;
-        cloud.addEventListener('pointerdown', function (e) {
-          downAt = performance.now(); downX = e.clientX; downY = e.clientY;
-        });
-        cloud.addEventListener('pointerup', function (e) {
-          var moved = Math.hypot(e.clientX - downX, e.clientY - downY);
-          if (performance.now() - downAt > 300 || moved > 10) return;
-          var cr = cloud.getBoundingClientRect();
-          var px = e.clientX - cr.left, py = e.clientY - cr.top;
-          var found = M.Query.point(bodies, { x: px, y: py })[0];
-          if (!found) return;
-          var dx = found.position.x - px, dy = found.position.y - py;
-          var len = Math.max(Math.hypot(dx, dy), 1);
-          var f = 0.16 * found.mass;
-          M.Body.applyForce(found, { x: px, y: py }, { x: (dx / len) * f, y: (dy / len) * f - 0.06 * found.mass });
-          M.Body.setAngularVelocity(found, (Math.random() - 0.5) * 0.5);
-          found.plugin.el.classList.add('hit');
-          (function (el) { setTimeout(function () { el.classList.remove('hit'); }, 260); })(found.plugin.el);
-          jabs++;
-          if (jabEl) jabEl.textContent = jabs;
-          if (hintText) {
-            if (jabs === 10) hintText.textContent = '🥊 Belle série. Le cardio suit ?';
-            if (jabs === 25) hintText.textContent = '🏆 K.O. technique. On en parle en entretien ?';
-          }
-        });
-        /* clicks never navigate while the game is on */
-        items.forEach(function (el) {
-          el.addEventListener('click', function (e) { e.preventDefault(); });
-        });
-
-        /* reset button: everything floats back to its starting spot */
-        var resetBtn = document.getElementById('cloudReset');
-        if (resetBtn) {
-          resetBtn.addEventListener('click', function () {
-            bodies.forEach(function (b) {
-              M.Body.setPosition(b, { x: b.plugin.x0, y: b.plugin.y0 });
-              M.Body.setVelocity(b, { x: 0, y: 0 });
-              M.Body.setAngle(b, 0);
-              M.Body.setAngularVelocity(b, 0);
-            });
-          });
-        }
-
-        /* physics runner + DOM sync */
-        M.Runner.run(M.Runner.create(), engine);
-        (function syncBodies() {
-          for (var i = 0; i < bodies.length; i++) {
-            var b = bodies[i];
-            /* rescue anything that somehow escaped the ring */
-            if (b.position.y > H + 400 || b.position.x < -400 || b.position.x > W + 400) {
-              M.Body.setPosition(b, { x: 60 + Math.random() * (W - 120), y: -40 });
-              M.Body.setVelocity(b, { x: 0, y: 0 });
-            }
-            b.plugin.el.style.setProperty('--pt',
-              'translate(' + (b.position.x - b.plugin.w / 2).toFixed(1) + 'px,' +
-              (b.position.y - b.plugin.h / 2).toFixed(1) + 'px) rotate(' + b.angle.toFixed(3) + 'rad)');
-          }
-          requestAnimationFrame(syncBodies);
-        })();
-      }
-    })();
 
     /* ---------- Magnetic buttons */
     document.querySelectorAll('.btn, .nav-logo').forEach(function (btn) {
@@ -881,6 +728,58 @@ document.addEventListener('DOMContentLoaded', function () {
       })();
     }
 
+    /* ---------- 07 · Red Bull: diagonal wipe reveal driven by scroll.
+       The brand film slices in as a thin diagonal band, sweeps open to
+       full-bleed while a giant outlined tagline flies across, then the
+       copy slides in from the left and the team photo lands. */
+    var rbSec = document.querySelector('.rb-cinema');
+    var rbFrame = document.getElementById('rbFrame');
+    var rbBgEl = document.getElementById('rbBg');
+    var rbFly = document.getElementById('rbFlyline');
+    var rbContent = document.getElementById('rbContent');
+    var rbPhoto = document.getElementById('rbPhoto');
+    if (rbSec && rbFrame && rbContent) {
+      var rbDirty = true;
+      window.addEventListener('scroll', function () { rbDirty = true; }, { passive: true });
+      window.addEventListener('resize', function () { rbDirty = true; }, { passive: true });
+      function lerpRb(a, b, t) { return a + (b - a) * t; }
+      (function rbLoop() {
+        if (rbDirty) {
+          rbDirty = false;
+          var vh3 = window.innerHeight || document.documentElement.clientHeight;
+          var rR = rbSec.getBoundingClientRect();
+          var total = rR.height - vh3;
+          if (total > 0 && rR.top < vh3 && rR.bottom > 0) {
+            var p = Math.min(Math.max(-rR.top / total, 0), 1);
+            /* phase 1 — diagonal band sweeps open (0 → .5) */
+            var w = Math.min(p / 0.5, 1);
+            var we = 1 - Math.pow(1 - w, 3);
+            rbFrame.style.clipPath = 'polygon(0% ' + lerpRb(58, 0, we) + '%, 100% ' + lerpRb(38, 0, we) +
+              '%, 100% ' + lerpRb(46, 100, we) + '%, 0% ' + lerpRb(66, 100, we) + '%)';
+            if (rbBgEl) rbBgEl.style.transform = 'scale(' + lerpRb(1.25, 1, we).toFixed(4) + ')';
+            /* tagline flies right → left across the whole pin, fades as copy lands */
+            if (rbFly) {
+              rbFly.style.transform = 'translateY(-50%) translateX(' + lerpRb(15, -75, p) + 'vw)';
+              rbFly.style.opacity = p < 0.55 ? 1 : Math.max(1 - (p - 0.55) / 0.2, 0).toFixed(3);
+            }
+            /* phase 2 — copy slides in from the left (.5 → .8) */
+            var tp = Math.min(Math.max((p - 0.5) / 0.3, 0), 1);
+            var te = 1 - Math.pow(1 - tp, 3);
+            rbContent.style.opacity = te.toFixed(3);
+            rbContent.style.transform = 'translateX(' + ((1 - te) * -70).toFixed(1) + 'px)';
+            /* team photo lands last (.65 → .9) */
+            if (rbPhoto) {
+              var pp = Math.min(Math.max((p - 0.65) / 0.25, 0), 1);
+              var pe2 = 1 - Math.pow(1 - pp, 3);
+              rbPhoto.style.opacity = pe2.toFixed(3);
+              rbPhoto.style.transform = 'rotate(' + lerpRb(9, 3, pe2) + 'deg) translateY(' + ((1 - pe2) * 70).toFixed(1) + 'px) scale(' + lerpRb(0.9, 1, pe2).toFixed(4) + ')';
+            }
+          }
+        }
+        requestAnimationFrame(rbLoop);
+      })();
+    }
+
     /* gallery main media is swapped dynamically — autoplay the new video too */
     document.querySelectorAll('.gallery-thumb').forEach(function (t) {
       t.addEventListener('click', function () {
@@ -895,4 +794,156 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   }
+})();
+
+/* =================================================================
+   VALUES GUESSING GAME — "Au-delà du CV"
+   The visitor types the qualities they value most in a workplace.
+   Right guesses score points (100 exact, 70 close) and flip one of
+   16 mystery cards: the value, why it fits Brice, and a link to the
+   matching chapter. Works on desktop and mobile.
+   ================================================================= */
+(function () {
+  'use strict';
+  var grid = document.getElementById('vgGrid');
+  var form = document.getElementById('vgForm');
+  var input = document.getElementById('vgInput');
+  var feedback = document.getElementById('vgFeedback');
+  var scoreEl = document.getElementById('vgScore');
+  var foundEl = document.getElementById('vgFoundCount');
+  var revealBtn = document.getElementById('vgReveal');
+  if (!grid || !form || !input) return;
+
+  var VALUES = [
+    { name: 'Écoute', syns: ['empathie', 'comprehension', 'bienveillance', 'attention aux autres'], why: 'Animer une Fresque du Climat m\'a appris à écouter avant de vouloir convaincre.', href: '#engagement' },
+    { name: 'Fédérer', syns: ['leadership', 'leader', 'equipe', 'esprit d equipe', 'cohesion', 'collectif', 'management', 'manager', 'team spirit', 'entraide'], why: 'Un an à la tête du BDE GACO : 10 personnes, 40 événements, un seul collectif.', href: '#bde' },
+    { name: 'Discipline', syns: ['rigueur', 'regularite', 'serieux', 'organisation', 'constance'], why: 'La boxe et l\'investissement m\'ont appris la même chose : la régularité paie.', href: '#depassement' },
+    { name: 'Sang-froid', syns: ['sang froid', 'sangfroid', 'calme', 'gestion du stress', 'stress', 'pression', 'maitrise de soi', 'maitrise'], why: 'Monter sur un ring devant 400 personnes, ça relativise une réunion tendue.', href: '#depassement' },
+    { name: 'Ouverture d\'esprit', syns: ['ouverture', 'international', 'tolerance', 'diversite', 'ouvert'], why: 'Un double diplôme au Québec, loin de mes repères : observer avant de juger.', href: '#international' },
+    { name: 'Curiosité', syns: ['apprendre', 'apprentissage', 'decouverte', 'soif d apprendre', 'curieux'], why: 'Comprendre comment chaque chose fonctionne, des marchés aux personnes.', href: '#investissement' },
+    { name: 'Énergie', syns: ['dynamisme', 'enthousiasme', 'motivation', 'punch', 'dynamique', 'passion'], why: 'Student Marketeer Red Bull : l\'énergie, c\'est littéralement le métier.', href: '#redbull' },
+    { name: 'Patience', syns: ['long terme', 'temps long', 'temperance'], why: 'Investir sur la durée m\'a appris que le temps travaille pour moi.', href: '#investissement' },
+    { name: 'Humilité', syns: ['modestie', 'remise en question', 'humble'], why: 'Nouvelle culture, nouvel accent : j\'ai réappris à écouter avant de parler.', href: '#international' },
+    { name: 'Adaptabilité', syns: ['flexibilite', 'agilite', 'polyvalence', 'adaptation', 'souplesse', 'agile'], why: 'Terrain, imprévus, publics différents : je m\'ajuste vite et avec le sourire.', href: '#redbull' },
+    { name: 'Dépassement de soi', syns: ['depassement', 'ambition', 'perseverance', 'resilience', 'determination', 'courage', 'travail', 'effort', 'combativite', 'volonte'], why: 'Victoire par TKO au premier round : la peur se travaille comme un muscle.', href: '#depassement' },
+    { name: 'Transmettre', syns: ['transmission', 'pedagogie', 'partage', 'enseigner', 'partager'], why: 'Ambassadeur UJM : donner envie à d\'autres de tenter l\'aventure.', href: '#ujm' },
+    { name: 'Confiance', syns: ['deleguer', 'delegation', 'fiabilite', 'loyaute', 'fiable', 'honnetete', 'integrite'], why: 'Déléguer sans lâcher : la grande leçon de mon année de présidence.', href: '#bde' },
+    { name: 'Contact humain', syns: ['contact', 'relationnel', 'communication', 'humain', 'sociabilite', 'relation', 'social', 'convivialite'], why: 'Aller vers les gens et sentir l\'énergie d\'un groupe, c\'est ce que je préfère.', href: '#redbull' },
+    { name: 'Vision stratégique', syns: ['vision', 'strategie', 'strategique', 'anticipation', 'vision long terme', 'prise de recul'], why: 'Comprendre comment une entreprise crée vraiment de la valeur, avant d\'agir.', href: '#investissement' },
+    { name: 'Lucidité', syns: ['recul', 'esprit critique', 'analyse', 'objectivite', 'pragmatisme', 'honnetete intellectuelle'], why: 'Accepter de me tromper, l\'assumer, et en tirer quelque chose.', href: '#depassement' }
+  ];
+
+  function normalize(str) {
+    return (str || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[''´`^]/g, ' ')
+      .replace(/[^a-z0-9 ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(' ')
+      .map(function (w) { return w.length > 3 ? w.replace(/s$/, '') : w; })
+      .join(' ');
+  }
+
+  /* build the card grid */
+  var found = 0, score = 0, misses = 0, hinted = false;
+  VALUES.forEach(function (v, i) {
+    v.norm = normalize(v.name);
+    v.normSyns = v.syns.map(normalize);
+    var card = document.createElement('div');
+    card.className = 'vg-card';
+    card.innerHTML =
+      '<div class="vg-card-inner">' +
+        '<div class="vg-face vg-front"><span class="vg-num">' + String(i + 1).padStart(2, '0') + '</span><span class="vg-q">?</span><span class="vg-letter"></span></div>' +
+        '<div class="vg-face vg-back"><span class="vg-pts"></span><span class="vg-word">' + v.name + '</span><p>' + v.why + '</p><a href="' + v.href + '">Voir le chapitre →</a></div>' +
+      '</div>';
+    grid.appendChild(card);
+    v.card = card;
+  });
+
+  function setFeedback(msg, cls) {
+    if (!feedback) return;
+    feedback.textContent = msg;
+    feedback.className = 'vg-feedback' + (cls ? ' ' + cls : '');
+  }
+  function updateCounters() {
+    if (scoreEl) scoreEl.textContent = score;
+    if (foundEl) foundEl.textContent = found + '/' + VALUES.length;
+  }
+  function revealCard(v, pts) {
+    v.found = true;
+    found++;
+    v.card.classList.add('found', 'flash');
+    var ptsEl = v.card.querySelector('.vg-pts');
+    if (ptsEl && pts) ptsEl.textContent = '+' + pts + ' pts';
+    setTimeout(function () { v.card.classList.remove('flash'); }, 600);
+  }
+  function giveHint() {
+    var left = VALUES.filter(function (v) { return !v.found && !v.hintShown; });
+    if (!left.length) return;
+    var pick = left[Math.floor(Math.random() * left.length)];
+    pick.hintShown = true;
+    var letterEl = pick.card.querySelector('.vg-letter');
+    if (letterEl) letterEl.textContent = 'Indice : « ' + pick.name.charAt(0) + '… »';
+  }
+
+  var missMsgs = [
+    'Pas dans mes 16 cartes. Tente un autre angle (humain, rigueur, vision…) !',
+    'Bonne idée, mais pas chez moi. Pense terrain, ring, marchés, Québec…',
+    'Pas celle-là. Qu\'est-ce qui compte quand tout part de travers ?'
+  ];
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var guess = normalize(input.value);
+    input.value = '';
+    if (!guess) return;
+    var exact = null, close = null;
+    VALUES.forEach(function (v) {
+      if (v.norm === guess) exact = exact || v;
+      else if (v.normSyns.indexOf(guess) !== -1) close = close || v;
+    });
+    var hit = exact || close;
+    if (hit && hit.found) {
+      setFeedback('« ' + hit.name + ' » est déjà retournée — vise une carte encore cachée.', '');
+      return;
+    }
+    if (hit) {
+      var pts = exact ? 100 : 70;
+      score += pts;
+      revealCard(hit, pts);
+      updateCounters();
+      if (found === VALUES.length) {
+        setFeedback('🏆 16/16, score ' + score + ' pts. On est clairement alignés : descends jusqu\'au contact.', 'ok');
+      } else if (exact) {
+        setFeedback('✔ En plein dans le mille : « ' + hit.name + ' » (+100 pts).', 'ok');
+      } else {
+        setFeedback('✔ Bien vu, ça correspond à « ' + hit.name + ' » (+70 pts).', 'ok');
+      }
+    } else {
+      misses++;
+      setFeedback(missMsgs[(misses - 1) % missMsgs.length], 'miss');
+      if (misses % 3 === 0) giveHint();
+    }
+  });
+
+  if (revealBtn) {
+    revealBtn.addEventListener('click', function () {
+      VALUES.forEach(function (v) { if (!v.found) revealCard(v, 0); });
+      updateCounters();
+      setFeedback('Les 16 valeurs sont révélées — clique sur une carte pour explorer le chapitre associé.', '');
+    });
+  }
+
+  /* card links are created after load: route them through Lenis */
+  grid.addEventListener('click', function (e) {
+    var a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    var target = document.querySelector(a.getAttribute('href'));
+    if (!target) return;
+    e.preventDefault();
+    if (window.__lenis) window.__lenis.scrollTo(target, { offset: -74, duration: 1.5 });
+    else target.scrollIntoView({ behavior: 'smooth' });
+  });
 })();

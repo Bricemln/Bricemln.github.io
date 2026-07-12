@@ -722,40 +722,126 @@ h2.split.play .hw-i{transition-delay:calc(var(--i,0)*45ms);}
   .invest-content{opacity:1 !important;transform:none !important;}
 }
 
-/* ---------- Value cloud mini-game (physics ring, desktop only) ----------
-   When script.js flips the cloud into "physics" mode, every word/photo
-   becomes a rigid body: they fall, pile up, can be grabbed, thrown, and
-   punched. Transforms are driven per-frame through the --pt variable so
-   the drift animation and hover scales can't fight the simulation. */
-.cloud-hint{
-  display:none;align-items:center;gap:16px;flex-wrap:wrap;
-  margin:-16px 0 26px;position:relative;z-index:2;
-  font-size:13.5px;color:var(--ink-soft);font-weight:600;
+/* ---------- Values guessing game ("Au-delà du CV") ----------
+   The visitor types the qualities they value in a workplace; every right
+   guess scores points and flips over one of 16 mystery cards, revealing
+   the value, why it fits Brice, and a link to the matching chapter. */
+.vg-head{max-width:760px;margin-bottom:30px;position:relative;z-index:2;}
+.vg-question{font-family:var(--font-display);font-weight:800;font-size:clamp(18px,2vw,23px);margin-bottom:16px;color:var(--ink);}
+.vg-form{display:flex;gap:10px;max-width:480px;}
+.vg-form input{
+  flex:1;min-width:0;padding:12px 20px;border-radius:100px;border:1.5px solid var(--line);
+  background:var(--surface);font-family:var(--font-body);font-size:15px;color:var(--ink);
+  outline:none;transition:border-color .2s,box-shadow .2s;
 }
-.cloud-hint.on{display:flex;}
-.cloud-hint-text{display:inline-flex;align-items:center;gap:6px;}
-.cloud-jabs{color:var(--muted);}
-.cloud-jabs b{color:var(--accent);font-variant-numeric:tabular-nums;}
-.cloud-reset{
+.vg-form input:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-soft);}
+.vg-status{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:13.5px;color:var(--ink-soft);font-weight:600;}
+.vg-feedback{transition:color .2s;}
+.vg-feedback.ok{color:var(--primary-dark);}
+.vg-feedback.miss{color:var(--accent-dark);}
+.vg-metrics b{color:var(--accent);font-variant-numeric:tabular-nums;}
+.vg-reveal{
   border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);
   font-weight:700;font-size:12.5px;padding:7px 14px;border-radius:100px;cursor:pointer;
   transition:border-color .2s,color .2s,transform .2s;
 }
-.cloud-reset:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
-.value-cloud.physics{touch-action:pan-y;}
-.value-cloud.physics .cloud-word,
-.value-cloud.physics .cloud-photo{
-  position:absolute !important;top:0 !important;left:0 !important;margin:0 !important;
-  animation:none !important;
-  transform:var(--pt, none) !important;
-  transition:background .25s ease,color .25s ease,border-color .25s ease,box-shadow .25s ease;
-  will-change:transform;user-select:none;-webkit-user-drag:none;cursor:grab;
+.vg-reveal:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+.vg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;position:relative;z-index:2;}
+@media (max-width:900px){.vg-grid{grid-template-columns:repeat(3,1fr);}}
+@media (max-width:620px){.vg-grid{grid-template-columns:repeat(2,1fr);gap:10px;}}
+.vg-card{perspective:1000px;}
+.vg-card-inner{
+  position:relative;min-height:190px;height:100%;
+  transform-style:preserve-3d;transition:transform .7s cubic-bezier(.3,.9,.35,1.15);
 }
-.value-cloud.physics .cloud-word:active,
-.value-cloud.physics .cloud-photo:active{cursor:grabbing;}
-.value-cloud.physics .cloud-photo img{pointer-events:none;}
-.value-cloud.physics .hit{box-shadow:0 0 0 5px rgba(255,107,69,.45),0 10px 26px rgba(255,107,69,.3) !important;}
-.value-cloud.physics .cloud-word.hit{background:var(--accent);border-color:var(--accent);color:#fff;}
+.vg-card.found .vg-card-inner{transform:rotateY(180deg);}
+.vg-face{
+  position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:16px 14px;text-align:center;
+}
+.vg-front{background:var(--ink);border:1px solid rgba(255,255,255,.07);}
+.vg-front .vg-q{font-family:var(--font-display);font-weight:800;font-size:34px;color:rgba(255,255,255,.28);}
+.vg-front .vg-num{position:absolute;top:10px;left:13px;font-size:11px;font-weight:800;color:rgba(255,255,255,.22);}
+.vg-front .vg-letter{margin-top:8px;font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--sun);text-transform:uppercase;}
+.vg-back{
+  background:var(--surface);border:1.5px solid var(--primary);
+  transform:rotateY(180deg);box-shadow:var(--shadow-md);gap:7px;justify-content:center;
+}
+.vg-back .vg-word{font-family:var(--font-display);font-weight:800;font-size:16px;color:var(--ink);line-height:1.15;}
+.vg-back p{font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
+.vg-back a{font-size:12px;font-weight:800;color:var(--primary);}
+.vg-back a:hover{text-decoration:underline;}
+.vg-back .vg-pts{position:absolute;top:9px;right:11px;font-size:11px;font-weight:800;color:var(--accent);}
+.vg-card.flash .vg-card-inner{animation:vg-pop .55s var(--ease);}
+@keyframes vg-pop{0%{transform:rotateY(180deg) scale(.92);}55%{transform:rotateY(180deg) scale(1.05);}100%{transform:rotateY(180deg) scale(1);}}
+@media (prefers-reduced-motion:reduce){
+  .vg-card-inner{transition:none;}
+  .vg-card.flash .vg-card-inner{animation:none;}
+}
+
+/* ---------- 07 · Red Bull: diagonal wipe trailer ----------
+   A different grammar from the other chapters: the brand film slices in
+   as a thin diagonal band, sweeps open to full-bleed while a giant
+   outlined tagline flies across, then the copy slides in from the left
+   and the team photo lands like a polaroid. */
+.rb-cinema{position:relative;height:200vh;background:#07080f;}
+.rb-stage{position:sticky;top:0;height:100vh;overflow:hidden;background:#07080f;}
+.rb-frame{
+  position:absolute;inset:0;overflow:hidden;background:#05060c;
+  clip-path:polygon(0 0,100% 0,100% 100%,0 100%);will-change:clip-path;
+}
+.rb-bg{will-change:transform;}
+.rb-bg iframe{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border:none;
+  width:116vw;height:65.25vw;min-height:116%;min-width:204.5vh;
+}
+.rb-scrim{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(100deg,rgba(5,6,12,.82) 0%,rgba(5,6,12,.3) 42%,rgba(5,6,12,.12) 68%,rgba(5,6,12,.55) 100%);
+}
+.rb-flyline{
+  position:absolute;top:50%;left:0;z-index:2;transform:translateY(-50%);
+  white-space:nowrap;pointer-events:none;will-change:transform,opacity;
+  font-family:var(--font-display);font-weight:800;line-height:1;
+  font-size:clamp(60px,10vw,150px);letter-spacing:-.01em;
+  color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.4);
+}
+.rb-content{
+  position:absolute;left:6vw;bottom:9vh;z-index:3;max-width:620px;
+  color:#fff;will-change:transform,opacity;
+}
+.rb-eyebrow{color:var(--sun);letter-spacing:.12em;}
+.rb-content h2{color:#fff;font-size:clamp(27px,3.6vw,46px);margin:6px 0 14px;text-shadow:0 5px 26px rgba(0,0,0,.5);}
+.rb-content p{color:rgba(255,255,255,.86);font-size:15.5px;line-height:1.65;margin-bottom:20px;text-shadow:0 3px 16px rgba(0,0,0,.5);}
+.rb-photo{
+  position:absolute;right:5vw;bottom:9vh;z-index:3;width:min(300px,24vw);
+  border-radius:14px;overflow:hidden;border:5px solid #fff;
+  box-shadow:0 26px 60px rgba(0,0,0,.55);cursor:zoom-in;
+  transform:rotate(3deg);will-change:transform,opacity;
+  transition:box-shadow .3s ease;
+}
+.rb-photo:hover{box-shadow:0 30px 70px rgba(0,0,0,.65);}
+.rb-photo img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;transition:transform .45s var(--ease);}
+.rb-photo:hover img{transform:scale(1.07);}
+.rb-photo span{
+  position:absolute;left:0;right:0;bottom:0;padding:20px 12px 9px;
+  background:linear-gradient(0deg,rgba(0,0,0,.78),transparent);
+  color:#fff;font-size:12px;font-weight:600;
+}
+@media (max-width:900px){
+  .rb-cinema{height:175vh;}
+  .rb-content{left:24px;right:24px;bottom:24vh;max-width:none;}
+  .rb-photo{right:24px;bottom:5vh;width:min(240px,52vw);}
+}
+@media (prefers-reduced-motion:reduce){
+  .rb-cinema{height:auto;}
+  .rb-stage{position:relative;}
+  .rb-frame{clip-path:none !important;}
+  .rb-flyline{display:none !important;}
+  .rb-content,.rb-photo{opacity:1 !important;transform:none !important;}
+  .rb-photo{transform:rotate(3deg) !important;}
+}
 
 /* ---------- Reduced motion: switch the whole cinematic layer off ---------- */
 @media (prefers-reduced-motion:reduce){
