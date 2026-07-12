@@ -972,7 +972,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (foundEl) foundEl.textContent = found + '/' + VALUES.length;
     if (barEl) barEl.style.width = (found / VALUES.length * 100) + '%';
     if (levelEl) levelEl.textContent = levelName();
-    if (rankEl) rankEl.textContent = found > 0 ? 'Top ' + Math.max(100 - percentile(), 1) + ' %' : '—';
+    if (rankEl) rankEl.textContent = found > 0 ? 'Top ' + Math.max(100 - percentile(), 1) + ' %' : '···';
     animateScore();
   }
   function setFeedback(msg, cls) {
@@ -1036,7 +1036,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var m = bestMatch(guess);
 
     if (m && m.v.found) {
-      setFeedback('« ' + m.v.name + ' » est déjà retournée — on pense pareil. Tente une carte encore cachée !', '');
+      setFeedback('« ' + m.v.name + ' » est déjà retournée, on pense pareil. Tente une carte encore cachée !', '');
       return;
     }
     if (!m) {
@@ -1045,7 +1045,7 @@ document.addEventListener('DOMContentLoaded', function () {
       form.classList.remove('shake');
       void form.offsetWidth;
       form.classList.add('shake');
-      setFeedback('🤔 Je ne vois pas encore le lien avec « ' + raw + ' »… vise un trait humain (ex : rigueur, audace, vision).', 'miss');
+      setFeedback('Je ne vois pas encore le lien avec « ' + raw + ' »… vise un trait humain (écoute, rigueur, audace, vision).', 'miss');
       if (missStreak % 2 === 0) giveHint();
       return;
     }
@@ -1059,20 +1059,20 @@ document.addEventListener('DOMContentLoaded', function () {
     revealCard(m.v, pts, m.tier === 1);
     updateHud();
 
-    var comboTxt = combo ? ' 🔥 Combo ×1,5 !' : '';
+    var comboTxt = combo ? ' Combo ×1,5 !' : '';
     var rankTxt = ' Tu fais mieux que ' + percentile() + ' % des visiteurs.';
     if (found === VALUES.length) {
-      setFeedback('🏆 16/16 — ' + score + ' pts. Top ' + Math.max(100 - percentile(), 1) + ' % des visiteurs. On est faits pour s\'entendre : descends jusqu\'au contact !', 'ok');
+      setFeedback('Seize sur seize, ' + score + ' pts, top ' + Math.max(100 - percentile(), 1) + ' % des visiteurs. On est faits pour s\'entendre : descends jusqu\'au contact !', 'ok');
       var c = centerOf(form);
       burst(c.x, c.y, 90, FX_COLORS);
     } else if (m.tier === 1) {
-      setFeedback('💥 En plein dans le mille : « ' + m.v.name + ' » (+' + pts + ' pts).' + comboTxt + rankTxt, 'ok');
+      setFeedback('En plein dans le mille : « ' + m.v.name + ' » (+' + pts + ' pts).' + comboTxt + rankTxt, 'ok');
     } else if (m.tier === 2) {
-      setFeedback('✔ Ça me ressemble : je range « ' + raw + ' » avec « ' + m.v.name + ' » (+' + pts + ' pts).' + comboTxt + rankTxt, 'ok');
+      setFeedback('Ça me ressemble : je range « ' + raw + ' » avec « ' + m.v.name + ' » (+' + pts + ' pts).' + comboTxt + rankTxt, 'ok');
     } else if (m.tier === 3) {
-      setFeedback('👌 Bien vu, ça rejoint « ' + m.v.name + ' » chez moi (+' + pts + ' pts).' + comboTxt + rankTxt, 'ok');
+      setFeedback('Bien vu, ça rejoint « ' + m.v.name + ' » chez moi (+' + pts + ' pts).' + comboTxt + rankTxt, 'ok');
     } else {
-      setFeedback('🧭 Je vois l\'idée — pour moi, ça touche à « ' + m.v.name + ' » (+' + pts + ' pts).' + comboTxt + rankTxt, 'ok');
+      setFeedback('Je vois l\'idée : pour moi, ça touche à « ' + m.v.name + ' » (+' + pts + ' pts).' + comboTxt + rankTxt, 'ok');
     }
   });
 
@@ -1080,7 +1080,7 @@ document.addEventListener('DOMContentLoaded', function () {
     revealBtn.addEventListener('click', function () {
       VALUES.forEach(function (v) { if (!v.found) { v.found = true; found++; v.card.classList.add('found'); } });
       updateHud();
-      setFeedback('Les 16 valeurs sont révélées — clique sur une carte pour explorer le chapitre associé.', '');
+      setFeedback('Les seize valeurs sont révélées. Clique sur une carte pour explorer le chapitre associé.', '');
     });
   }
 
