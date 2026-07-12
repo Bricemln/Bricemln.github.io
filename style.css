@@ -722,6 +722,41 @@ h2.split.play .hw-i{transition-delay:calc(var(--i,0)*45ms);}
   .invest-content{opacity:1 !important;transform:none !important;}
 }
 
+/* ---------- Value cloud mini-game (physics ring, desktop only) ----------
+   When script.js flips the cloud into "physics" mode, every word/photo
+   becomes a rigid body: they fall, pile up, can be grabbed, thrown, and
+   punched. Transforms are driven per-frame through the --pt variable so
+   the drift animation and hover scales can't fight the simulation. */
+.cloud-hint{
+  display:none;align-items:center;gap:16px;flex-wrap:wrap;
+  margin:-16px 0 26px;position:relative;z-index:2;
+  font-size:13.5px;color:var(--ink-soft);font-weight:600;
+}
+.cloud-hint.on{display:flex;}
+.cloud-hint-text{display:inline-flex;align-items:center;gap:6px;}
+.cloud-jabs{color:var(--muted);}
+.cloud-jabs b{color:var(--accent);font-variant-numeric:tabular-nums;}
+.cloud-reset{
+  border:1.5px solid var(--line);background:var(--surface);color:var(--ink-soft);
+  font-weight:700;font-size:12.5px;padding:7px 14px;border-radius:100px;cursor:pointer;
+  transition:border-color .2s,color .2s,transform .2s;
+}
+.cloud-reset:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+.value-cloud.physics{touch-action:pan-y;}
+.value-cloud.physics .cloud-word,
+.value-cloud.physics .cloud-photo{
+  position:absolute !important;top:0 !important;left:0 !important;margin:0 !important;
+  animation:none !important;
+  transform:var(--pt, none) !important;
+  transition:background .25s ease,color .25s ease,border-color .25s ease,box-shadow .25s ease;
+  will-change:transform;user-select:none;-webkit-user-drag:none;cursor:grab;
+}
+.value-cloud.physics .cloud-word:active,
+.value-cloud.physics .cloud-photo:active{cursor:grabbing;}
+.value-cloud.physics .cloud-photo img{pointer-events:none;}
+.value-cloud.physics .hit{box-shadow:0 0 0 5px rgba(255,107,69,.45),0 10px 26px rgba(255,107,69,.3) !important;}
+.value-cloud.physics .cloud-word.hit{background:var(--accent);border-color:var(--accent);color:#fff;}
+
 /* ---------- Reduced motion: switch the whole cinematic layer off ---------- */
 @media (prefers-reduced-motion:reduce){
   .preloader{display:none !important;}

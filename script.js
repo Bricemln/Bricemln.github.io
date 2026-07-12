@@ -566,9 +566,13 @@ document.addEventListener('DOMContentLoaded', function () {
       document.addEventListener('mouseover', function (e) {
         if (!(e.target instanceof Element)) return;
         var onControl = e.target.closest('.carousel-arrow,.carousel-dots,.gallery-thumb,.lightbox-close');
-        var media = onControl ? null : e.target.closest(mediaSel);
-        var link = e.target.closest(linkSel);
-        if (media) {
+        var physicsItem = e.target.closest('.value-cloud.physics .cloud-word, .value-cloud.physics .cloud-photo');
+        var media = (onControl || physicsItem) ? null : e.target.closest(mediaSel);
+        var link = physicsItem ? null : e.target.closest(linkSel);
+        if (physicsItem) {
+          ring.classList.add('is-media'); ring.classList.remove('is-link');
+          if (labelEl) labelEl.textContent = 'Frappe !';
+        } else if (media) {
           ring.classList.add('is-media'); ring.classList.remove('is-link');
           if (labelEl) labelEl.textContent = media.classList.contains('cloud-photo') ? 'Découvrir' : 'Voir';
         } else if (link || onControl) {
@@ -580,6 +584,155 @@ document.addEventListener('DOMContentLoaded', function () {
       document.addEventListener('mouseleave', function () { dot.classList.add('is-hidden'); ring.classList.add('is-hidden'); });
       document.addEventListener('mouseenter', function () { dot.classList.remove('is-hidden'); ring.classList.remove('is-hidden'); });
     }
+
+    /* =========================================================
+       VALUE CLOUD MINI-GAME — physics ring (desktop only)
+       Words and photos become rigid bodies: they drop and pile
+       up when the section appears, can be grabbed and thrown,
+       and a quick click lands a punch. Powered by Matter.js,
+       loaded lazily only when the section comes near.
+    ========================================================= */
+    (function () {
+      var cloud = document.getElementById('valueCloud');
+      var hint = document.getElementById('cloudHint');
+      if (!cloud || window.innerWidth < 761) return;
+      var startedGame = false;
+      var gameIo = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting && !startedGame) {
+          startedGame = true;
+          gameIo.disconnect();
+          var s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js';
+          s.onload = initGame;
+          document.head.appendChild(s);
+        }
+      }, { rootMargin: '300px' });
+      gameIo.observe(cloud);
+
+      function initGame() {
+        if (!window.Matter) return;
+        var M = window.Matter;
+        var W = cloud.clientWidth, H = cloud.clientHeight;
+        var cloudRect = cloud.getBoundingClientRect();
+        var items = Array.prototype.slice.call(cloud.querySelectorAll('.cloud-word, .cloud-photo'));
+        if (!items.length) return;
+
+        /* measure starting spots BEFORE flipping to physics mode */
+        var seeds = items.map(function (el) {
+          var r = el.getBoundingClientRect();
+          return {
+            el: el,
+            x: r.left - cloudRect.left + r.width / 2,
+            y: r.top - cloudRect.top + r.height / 2,
+            w: r.width, h: r.height,
+            round: el.classList.contains('cloud-photo')
+          };
+        });
+
+        cloud.classList.add('physics');
+        if (hint) hint.classList.add('on');
+
+        var engine = M.Engine.create();
+        engine.gravity.y = 1.1;
+
+        var bodies = seeds.map(function (s) {
+          var body = s.round
+            ? M.Bodies.circle(s.x, s.y, s.w / 2, { restitution: 0.55, friction: 0.08, frictionAir: 0.012 })
+            : M.Bodies.rectangle(s.x, s.y, s.w, s.h, {
+                restitution: 0.45, friction: 0.1, frictionAir: 0.012,
+                chamfer: { radius: Math.min(18, s.h / 2 - 1) }
+              });
+          body.plugin.el = s.el; body.plugin.w = s.w; body.plugin.h = s.h;
+          body.plugin.x0 = s.x; body.plugin.y0 = s.y;
+          return body;
+        });
+
+        var t = 80;
+        var walls = [
+          M.Bodies.rectangle(W / 2, H + t / 2, W + t * 4, t, { isStatic: true }),       /* floor */
+          M.Bodies.rectangle(-t / 2, H / 2 - H, t, H * 4, { isStatic: true }),          /* left  */
+          M.Bodies.rectangle(W + t / 2, H / 2 - H, t, H * 4, { isStatic: true }),       /* right */
+          M.Bodies.rectangle(W / 2, -H * 1.4 - t / 2, W + t * 4, t, { isStatic: true }) /* ceiling, far above */
+        ];
+        M.Composite.add(engine.world, bodies.concat(walls));
+
+        /* drag & throw */
+        var mouse = M.Mouse.create(cloud);
+        var mc = M.MouseConstraint.create(engine, {
+          mouse: mouse,
+          constraint: { stiffness: 0.18, damping: 0.12 }
+        });
+        M.Composite.add(engine.world, mc);
+        /* Matter's mouse hijacks the wheel: give scrolling back to the page */
+        cloud.removeEventListener('mousewheel', mouse.mousewheel);
+        cloud.removeEventListener('DOMMouseScroll', mouse.mousewheel);
+        cloud.removeEventListener('wheel', mouse.mousewheel);
+
+        /* quick click (no drag) = punch */
+        var jabs = 0;
+        var jabEl = document.getElementById('jabCount');
+        var hintText = document.getElementById('cloudHintText');
+        var downAt = 0, downX = 0, downY = 0;
+        cloud.addEventListener('pointerdown', function (e) {
+          downAt = performance.now(); downX = e.clientX; downY = e.clientY;
+        });
+        cloud.addEventListener('pointerup', function (e) {
+          var moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+          if (performance.now() - downAt > 300 || moved > 10) return;
+          var cr = cloud.getBoundingClientRect();
+          var px = e.clientX - cr.left, py = e.clientY - cr.top;
+          var found = M.Query.point(bodies, { x: px, y: py })[0];
+          if (!found) return;
+          var dx = found.position.x - px, dy = found.position.y - py;
+          var len = Math.max(Math.hypot(dx, dy), 1);
+          var f = 0.16 * found.mass;
+          M.Body.applyForce(found, { x: px, y: py }, { x: (dx / len) * f, y: (dy / len) * f - 0.06 * found.mass });
+          M.Body.setAngularVelocity(found, (Math.random() - 0.5) * 0.5);
+          found.plugin.el.classList.add('hit');
+          (function (el) { setTimeout(function () { el.classList.remove('hit'); }, 260); })(found.plugin.el);
+          jabs++;
+          if (jabEl) jabEl.textContent = jabs;
+          if (hintText) {
+            if (jabs === 10) hintText.textContent = '🥊 Belle série. Le cardio suit ?';
+            if (jabs === 25) hintText.textContent = '🏆 K.O. technique. On en parle en entretien ?';
+          }
+        });
+        /* clicks never navigate while the game is on */
+        items.forEach(function (el) {
+          el.addEventListener('click', function (e) { e.preventDefault(); });
+        });
+
+        /* reset button: everything floats back to its starting spot */
+        var resetBtn = document.getElementById('cloudReset');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', function () {
+            bodies.forEach(function (b) {
+              M.Body.setPosition(b, { x: b.plugin.x0, y: b.plugin.y0 });
+              M.Body.setVelocity(b, { x: 0, y: 0 });
+              M.Body.setAngle(b, 0);
+              M.Body.setAngularVelocity(b, 0);
+            });
+          });
+        }
+
+        /* physics runner + DOM sync */
+        M.Runner.run(M.Runner.create(), engine);
+        (function syncBodies() {
+          for (var i = 0; i < bodies.length; i++) {
+            var b = bodies[i];
+            /* rescue anything that somehow escaped the ring */
+            if (b.position.y > H + 400 || b.position.x < -400 || b.position.x > W + 400) {
+              M.Body.setPosition(b, { x: 60 + Math.random() * (W - 120), y: -40 });
+              M.Body.setVelocity(b, { x: 0, y: 0 });
+            }
+            b.plugin.el.style.setProperty('--pt',
+              'translate(' + (b.position.x - b.plugin.w / 2).toFixed(1) + 'px,' +
+              (b.position.y - b.plugin.h / 2).toFixed(1) + 'px) rotate(' + b.angle.toFixed(3) + 'rad)');
+          }
+          requestAnimationFrame(syncBodies);
+        })();
+      }
+    })();
 
     /* ---------- Magnetic buttons */
     document.querySelectorAll('.btn, .nav-logo').forEach(function (btn) {
