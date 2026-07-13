@@ -401,12 +401,14 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ---------- Fjord player: keep enablejsapi working on any host
      (the origin param must match the domain actually serving the page) */
   try {
-    var fjordFrame = document.getElementById('fjordPlayer');
-    if (fjordFrame && location.protocol.indexOf('http') === 0 &&
-        fjordFrame.src.indexOf('origin=' + encodeURIComponent(location.origin)) === -1 &&
-        fjordFrame.src.indexOf('origin=' + location.origin) === -1) {
-      fjordFrame.src = fjordFrame.src.replace(/origin=[^&]+/, 'origin=' + encodeURIComponent(location.origin));
-    }
+    ['fjordPlayer', 'vgBgPlayer'].forEach(function (fid) {
+      var fr = document.getElementById(fid);
+      if (fr && location.protocol.indexOf('http') === 0 &&
+          fr.src.indexOf('origin=' + encodeURIComponent(location.origin)) === -1 &&
+          fr.src.indexOf('origin=' + location.origin) === -1) {
+        fr.src = fr.src.replace(/origin=[^&]+/, 'origin=' + encodeURIComponent(location.origin));
+      }
+    });
   } catch (e) { /* non-blocking */ }
 
   /* ---------- Split text into masked words (keeps inner spans like .hl) */
@@ -951,6 +953,19 @@ document.addEventListener('DOMContentLoaded', function () {
         intro.innerHTML = '<div class="vg-intro-text">C\'est le moment de <em>jouer</em>.</div>';
         (vgSecEl || document.body).appendChild(intro);
         requestAnimationFrame(function () { intro.classList.add('show'); });
+        /* ambient table video runs at 0.75x for a calmer mood */
+        try {
+          if (window.YT && window.YT.Player && document.getElementById('vgBgPlayer')) {
+            new YT.Player('vgBgPlayer', {
+              events: {
+                onReady: function (ev) { ev.target.mute(); ev.target.setPlaybackRate(0.75); },
+                onStateChange: function (ev) {
+                  if (window.YT && ev.data === YT.PlayerState.PLAYING) ev.target.setPlaybackRate(0.75);
+                }
+              }
+            });
+          }
+        } catch (errYt) { /* non-blocking */ }
         setTimeout(function () {
           intro.classList.remove('show');
           setTimeout(function () { if (intro.parentNode) intro.parentNode.removeChild(intro); }, 600);
@@ -961,13 +976,20 @@ document.addEventListener('DOMContentLoaded', function () {
             c.style.setProperty('--dx', (gcx - (cr.left + cr.width / 2)).toFixed(0) + 'px');
             c.style.setProperty('--dy', (deckY - (cr.top + cr.height / 2)).toFixed(0) + 'px');
             c.style.setProperty('--dr', ((Math.random() - 0.5) * 32).toFixed(1) + 'deg');
-            setTimeout(function () { c.classList.add('in'); }, i * 65);
+            setTimeout(function () {
+              c.style.animationDuration = (0.72 + Math.random() * 0.28).toFixed(2) + 's';
+              c.classList.add('in');
+              c.addEventListener('animationend', function onDealt() {
+                c.classList.add('dealt');
+                c.removeEventListener('animationend', onDealt);
+              });
+            }, i * 65);
           });
         }, 1700);
       }, { threshold: 0.12 });
       gridIo.observe(grid);
       /* absolute failsafe: never leave cards hidden */
-      setTimeout(function () { cardsArr.forEach(function (c) { c.classList.add('in'); }); }, 6000);
+      setTimeout(function () { cardsArr.forEach(function (c) { c.classList.add('in', 'dealt'); }); }, 8000);
     } catch (e) { grid.classList.remove('vg-anim'); }
   }
 
@@ -1234,6 +1256,7 @@ document.addEventListener('DOMContentLoaded', function () {
     revealBtn.addEventListener('click', function () {
       if (revealedAll) return;
       revealedAll = true;
+      score = 0; /* honesty of the scoreboard: revealing is not playing */
       lastLevelIdx = 3; /* keep the level flash quiet during the wave */
       showLevelUp('Pas grave : l\'essentiel, c\'est d\'avoir tenté.');
       var hidden = VALUES.filter(function (v) { return !v.found; });
@@ -1385,6 +1408,10 @@ document.addEventListener('DOMContentLoaded', function () {
   var baseUpdateHud = updateHud;
   updateHud = function () {
     baseUpdateHud();
+    if (revealedAll) {
+      if (rankEl) rankEl.textContent = 'Dernier';
+      if (levelEl) levelEl.textContent = 'Niv. 0 · Spectateur';
+    }
     var idx = levelIdx();
     if (idx > lastLevelIdx && found < VALUES.length) {
       lastLevelIdx = idx;
