@@ -944,16 +944,26 @@ document.addEventListener('DOMContentLoaded', function () {
       var gridIo = new IntersectionObserver(function (entries) {
         if (!entries[0].isIntersecting) return;
         gridIo.disconnect();
-        /* deal the cards from the centre of the table, like a croupier */
-        var gr = grid.getBoundingClientRect();
-        var gcx = gr.left + gr.width / 2, gcy = gr.top + gr.height / 2;
-        cardsArr.forEach(function (c, i) {
-          var cr = c.getBoundingClientRect();
-          c.style.setProperty('--dx', (gcx - (cr.left + cr.width / 2)).toFixed(0) + 'px');
-          c.style.setProperty('--dy', (gcy - (cr.top + cr.height / 2)).toFixed(0) + 'px');
-          c.style.setProperty('--dr', ((Math.random() - 0.5) * 24).toFixed(1) + 'deg');
-          setTimeout(function () { c.classList.add('in'); }, 120 + i * 75);
-        });
+        /* announcement, then the croupier deals from the top of the table */
+        var vgSecEl = document.querySelector('.vg-section');
+        var intro = document.createElement('div');
+        intro.className = 'vg-intro';
+        intro.innerHTML = '<div class="vg-intro-text">C\'est le moment de <em>jouer</em>.</div>';
+        (vgSecEl || document.body).appendChild(intro);
+        requestAnimationFrame(function () { intro.classList.add('show'); });
+        setTimeout(function () {
+          intro.classList.remove('show');
+          setTimeout(function () { if (intro.parentNode) intro.parentNode.removeChild(intro); }, 600);
+          var gr = grid.getBoundingClientRect();
+          var gcx = gr.left + gr.width / 2, deckY = gr.top - 70;
+          cardsArr.forEach(function (c, i) {
+            var cr = c.getBoundingClientRect();
+            c.style.setProperty('--dx', (gcx - (cr.left + cr.width / 2)).toFixed(0) + 'px');
+            c.style.setProperty('--dy', (deckY - (cr.top + cr.height / 2)).toFixed(0) + 'px');
+            c.style.setProperty('--dr', ((Math.random() - 0.5) * 32).toFixed(1) + 'deg');
+            setTimeout(function () { c.classList.add('in'); }, i * 65);
+          });
+        }, 1700);
       }, { threshold: 0.12 });
       gridIo.observe(grid);
       /* absolute failsafe: never leave cards hidden */
@@ -1222,10 +1232,28 @@ document.addEventListener('DOMContentLoaded', function () {
   var revealedAll = false;
   if (revealBtn) {
     revealBtn.addEventListener('click', function () {
+      if (revealedAll) return;
       revealedAll = true;
-      VALUES.forEach(function (v) { if (!v.found) { v.found = true; found++; v.card.classList.add('found'); } });
-      updateHud();
-      setFeedback('Les seize valeurs sont révélées. Clique sur une carte pour explorer le chapitre associé.', '');
+      lastLevelIdx = 3; /* keep the level flash quiet during the wave */
+      showLevelUp('Pas grave : l\'essentiel, c\'est d\'avoir tenté.');
+      var hidden = VALUES.filter(function (v) { return !v.found; });
+      hidden.forEach(function (v, i) {
+        setTimeout(function () {
+          v.found = true;
+          found++;
+          v.card.classList.add('found', 'flash');
+          (function (card) { setTimeout(function () { card.classList.remove('flash'); }, 650); })(v.card);
+          if (i % 3 === 0) {
+            var cc = centerOf(v.card);
+            burst(cc.x, cc.y, 12, FX_COLORS);
+          }
+          if (i === hidden.length - 1) {
+            updateHud();
+            setFeedback('Les seize valeurs sont là. Clique sur une carte pour explorer son chapitre.', '');
+          }
+        }, 900 + i * 120);
+      });
+      if (!hidden.length) setFeedback('Tout est déjà révélé. Clique sur une carte pour explorer son chapitre.', '');
     });
   }
 
