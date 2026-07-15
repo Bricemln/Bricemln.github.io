@@ -52,6 +52,14 @@ section{position:relative;}
 /* ============ SCROLL PROGRESS ============ */
 /* lazy embeds: keep the frame invisible until its src is injected */
 iframe[data-src]:not([src]){visibility:hidden;}
+/* mobile: lighter posters (480px suffit sur petit écran, ~20 Ko au lieu de ~100) */
+@media (max-width:768px){
+  .hero-immersive-bg{background-image:url('https://i.ytimg.com/vi/IWT0hFrPTQM/hqdefault.jpg') !important;}
+  .hero-video-b-bg{background-image:url('https://i.ytimg.com/vi/6N13elbIXdQ/hqdefault.jpg') !important;}
+  .vg-bgvideo{background-image:url('https://i.ytimg.com/vi/6skaM_CsTPg/hqdefault.jpg') !important;}
+  .invest-cinema-bg{background-image:url('https://i.ytimg.com/vi/AFicYbv-mzg/hqdefault.jpg') !important;}
+  .rb-bg{background-image:url('https://i.ytimg.com/vi/IQQf7FEr668/hqdefault.jpg') !important;}
+}
 .scroll-progress{position:fixed;top:0;left:0;height:4px;width:0%;background:linear-gradient(90deg,var(--primary),var(--accent));z-index:1100;transition:width .05s linear;}
 
 /* ============ NAV ============ */

@@ -39,6 +39,9 @@ window.onYouTubeIframeAPIReady = initFjordLoop;
 document.addEventListener('DOMContentLoaded', function () {
   var lazies = Array.prototype.slice.call(document.querySelectorAll('iframe[data-src]'));
   if (!lazies.length) return;
+  /* On phones, background videos cost several MB on cellular and wreck
+     load times: the poster images stay, the embeds never load. */
+  if (window.matchMedia('(max-width: 768px)').matches) return;
   function activate(f) {
     if (!f.getAttribute('src')) f.setAttribute('src', f.getAttribute('data-src'));
     if (f.id === 'fjordPlayer') setTimeout(initFjordLoop, 1200);
