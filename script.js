@@ -1,3 +1,6 @@
+/* Security: never allow this site to be framed (clickjacking) */
+try { if (window.top !== window.self) { window.top.location = window.self.location; } } catch (eFrame) { }
+
 /* ---------- Fjord video: true 35s-80s loop via the YouTube IFrame API ----------
    The loop=1&playlist=<id> URL trick only respects start= on the first play;
    once it restarts it replays from 0s, showing footage we don't want.
@@ -18,6 +21,9 @@ window.onYouTubeIframeAPIReady = function () {
 };
 
 document.addEventListener('DOMContentLoaded', function () {
+
+  /* decode images off the main thread */
+  document.querySelectorAll('img').forEach(function (im) { im.decoding = 'async'; });
 
   /* ---------- Nav scroll state ---------- */
   var nav = document.getElementById('nav');
@@ -917,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* build the card grid */
-  var found = 0, score = 0, shownScore = 0, streak = 0, missStreak = 0;
+  var found = 0, earnedFound = 0, score = 0, shownScore = 0, streak = 0, missStreak = 0;
   VALUES.forEach(function (v, i) {
     v.norm = normalize(v.name);
     v.normSyns = v.syns.map(normalize);
@@ -958,9 +964,16 @@ document.addEventListener('DOMContentLoaded', function () {
           if (window.YT && window.YT.Player && document.getElementById('vgBgPlayer')) {
             new YT.Player('vgBgPlayer', {
               events: {
-                onReady: function (ev) { ev.target.mute(); ev.target.setPlaybackRate(0.75); },
+                onReady: function (ev) { ev.target.mute(); ev.target.setPlaybackRate(0.85); },
                 onStateChange: function (ev) {
-                  if (window.YT && ev.data === YT.PlayerState.PLAYING) ev.target.setPlaybackRate(0.75);
+                  if (!window.YT) return;
+                  if (ev.data === YT.PlayerState.PLAYING) ev.target.setPlaybackRate(0.85);
+                  /* let the table breathe: 1 min 30 of stillness between loops */
+                  if (ev.data === YT.PlayerState.ENDED) {
+                    setTimeout(function () {
+                      try { ev.target.seekTo(0); ev.target.playVideo(); } catch (e2) { }
+                    }, 90000);
+                  }
                 }
               }
             });
@@ -971,17 +984,23 @@ document.addEventListener('DOMContentLoaded', function () {
           setTimeout(function () { if (intro.parentNode) intro.parentNode.removeChild(intro); }, 600);
           var gr = grid.getBoundingClientRect();
           var gcx = gr.left + gr.width / 2, deckY = gr.top - 70;
+          burst(gcx, Math.max(deckY, 60), 22, FX_COLORS);
           cardsArr.forEach(function (c, i) {
             var cr = c.getBoundingClientRect();
             c.style.setProperty('--dx', (gcx - (cr.left + cr.width / 2)).toFixed(0) + 'px');
             c.style.setProperty('--dy', (deckY - (cr.top + cr.height / 2)).toFixed(0) + 'px');
-            c.style.setProperty('--dr', ((Math.random() - 0.5) * 32).toFixed(1) + 'deg');
+            c.style.setProperty('--dr', ((Math.random() < 0.5 ? -1 : 1) * (200 + Math.random() * 140)).toFixed(0) + 'deg');
             setTimeout(function () {
-              c.style.animationDuration = (0.72 + Math.random() * 0.28).toFixed(2) + 's';
+              c.style.animationDuration = (0.62 + Math.random() * 0.22).toFixed(2) + 's';
               c.classList.add('in');
               c.addEventListener('animationend', function onDealt() {
                 c.classList.add('dealt');
                 c.removeEventListener('animationend', onDealt);
+                /* landing sparks, one card out of two to stay light on old PCs */
+                if (i % 2 === 0) {
+                  var lc = c.getBoundingClientRect();
+                  burst(lc.left + lc.width / 2, lc.top + lc.height / 2, 6, FX_COLORS);
+                }
               });
             }, i * 65);
           });
@@ -1082,11 +1101,11 @@ document.addEventListener('DOMContentLoaded', function () {
   var LEVELS = [[0, 'Niv. 1 · Observateur'], [4, 'Niv. 2 · Analyste'], [8, 'Niv. 3 · Chasseur de talents'], [12, 'Niv. 4 · DRH d\'élite'], [16, 'Niv. MAX · Match parfait']];
   function levelName() {
     var name = LEVELS[0][1];
-    LEVELS.forEach(function (l) { if (found >= l[0]) name = l[1]; });
+    LEVELS.forEach(function (l) { if (earnedFound >= l[0]) name = l[1]; });
     return name;
   }
   function percentile() {
-    return Math.min(99, Math.round(16 + found * 4.3 + Math.min(score, 1400) / 60));
+    return Math.min(99, Math.round(16 + earnedFound * 4.3 + Math.min(score, 1400) / 60));
   }
   function animateScore() {
     var from = shownScore, to = score, t0 = performance.now();
@@ -1102,7 +1121,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (foundEl) foundEl.textContent = found + '/' + VALUES.length;
     if (barEl) barEl.style.width = (found / VALUES.length * 100) + '%';
     if (levelEl) levelEl.textContent = levelName();
-    if (rankEl) rankEl.textContent = found > 0 ? 'Top ' + Math.max(100 - percentile(), 1) + ' %' : '···';
+    if (rankEl) rankEl.textContent = earnedFound > 0 ? 'Top ' + Math.max(100 - percentile(), 1) + ' %' : '···';
     animateScore();
   }
   function setFeedback(msg, cls) {
@@ -1123,8 +1142,16 @@ document.addEventListener('DOMContentLoaded', function () {
     burst(c.x, c.y, exact ? 42 : 26, FX_COLORS);
     if (pts) floatPts(v.card, '+' + pts);
   }
-  /* ---------- hints: three per game, via the Indice button ---------- */
-  var hintsLeft = 3;
+  function hintLetters(v) {
+    var remaining = VALUES.length - found;
+    if (remaining < 5) {
+      return 'Indice : « ' + v.name.charAt(0) + ' … ' + v.name.charAt(v.name.length - 1) + ' »';
+    }
+    return 'Indice : « ' + v.name.charAt(0) + '… »';
+  }
+
+  /* ---------- hints: five per game, via the Indice button ---------- */
+  var hintsLeft = 5;
   var hintBtn = document.getElementById('vgHint');
   var hintCountEl = document.getElementById('vgHintCount');
   function useHint() {
@@ -1139,8 +1166,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     var pick = left[Math.floor(Math.random() * left.length)];
     pick.hintShown = true;
+    pick.clueGiven = true; /* finding this card now earns fewer points */
     var letterEl = pick.card.querySelector('.vg-letter');
-    if (letterEl) letterEl.textContent = 'Indice : « ' + pick.name.charAt(0) + '… »';
+    if (letterEl) letterEl.textContent = hintLetters(pick);
     pick.card.classList.remove('peek');
     void pick.card.offsetWidth;
     pick.card.classList.add('peek');
@@ -1170,6 +1198,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 7500);
   }
 
+  /* words that must never land on a card */
+  var BLOCKLIST = ['chiant', 'mechant', 'nul', 'con', 'connard', 'connasse', 'moche', 'bete', 'stupide', 'idiot', 'idiote', 'naze', 'pourri', 'flemmard', 'flemme', 'paresseux', 'paresse', 'arrogant', 'arrogance', 'egoiste', 'egoisme', 'menteur', 'mensonge', 'lache', 'faible', 'ennuyeux', 'relou', 'debile', 'mauvais', 'jaloux', 'hypocrite', 'pretentieux', 'aggressif', 'agressif', 'violent', 'toxique'];
+
   /* ---------- generous matcher: exact > synonym > fuzzy > association ---------- */
   function bestMatch(guess) {
     var i, j, v;
@@ -1180,18 +1211,20 @@ document.addEventListener('DOMContentLoaded', function () {
       if (VALUES[i].normSyns.indexOf(guess) !== -1) return { v: VALUES[i], tier: 2 };
     }
     var best = null, bestScore = 0;
-    for (i = 0; i < VALUES.length; i++) {
-      v = VALUES[i];
-      var cands = [v.norm].concat(v.normSyns);
-      for (j = 0; j < cands.length; j++) {
-        var d = dice(guess, cands[j]);
-        if (guess.length >= 5 && cands[j].length >= 5 && lev(guess, cands[j]) <= 2) d = Math.max(d, 0.9);
-        if (cands[j].indexOf(guess) === 0 && guess.length >= 4) d = Math.max(d, 0.8);
-        if (d > bestScore) { bestScore = d; best = v; }
+    if (guess.length >= 4) {
+      for (i = 0; i < VALUES.length; i++) {
+        v = VALUES[i];
+        var cands = [v.norm].concat(v.normSyns);
+        for (j = 0; j < cands.length; j++) {
+          var d = dice(guess, cands[j]);
+          if (guess.length >= 5 && cands[j].length >= 5 && lev(guess, cands[j]) <= 2) d = Math.max(d, 0.9);
+          if (cands[j].indexOf(guess) === 0 && guess.length >= 4) d = Math.max(d, 0.8);
+          if (d > bestScore) { bestScore = d; best = v; }
+        }
       }
     }
-    if (best && bestScore >= 0.62) return { v: best, tier: 3 };
-    if (best && bestScore >= 0.42) return { v: best, tier: 4 };
+    if (best && bestScore >= 0.68) return { v: best, tier: 3 };
+    if (best && bestScore >= 0.55) return { v: best, tier: 4 };
     lastMissScore = bestScore;
     return null;
   }
@@ -1203,6 +1236,15 @@ document.addEventListener('DOMContentLoaded', function () {
     var guess = normalize(raw);
     input.value = '';
     if (!guess) return;
+    if (BLOCKLIST.indexOf(guess) !== -1 || BLOCKLIST.indexOf(guess.replace(/e$/, '')) !== -1) {
+      stuckCount++;
+      form.classList.remove('shake');
+      void form.offsetWidth;
+      form.classList.add('shake');
+      setFeedback('« ' + raw + ' » ? On va faire comme si je n\'avais rien lu. Vise une qualité, une vraie.', 'miss');
+      nudgeIfStuck();
+      return;
+    }
     var m = bestMatch(guess);
 
     if (m && m.v.found) {
@@ -1226,15 +1268,19 @@ document.addEventListener('DOMContentLoaded', function () {
     missStreak = 0;
     stuckCount = 0;
     streak++;
+    earnedFound++;
     if (hintBtn) hintBtn.classList.remove('sparkle');
     var base = m.tier === 1 ? 100 : m.tier === 2 ? 80 : m.tier === 3 ? 60 : 40;
     var combo = streak >= 3;
     var pts = combo ? Math.round(base * 1.5) : base;
+    var usedClue = !!m.v.clueGiven;
+    if (usedClue) pts = Math.round(pts * 0.6);
     score += pts;
     revealCard(m.v, pts, m.tier === 1);
     updateHud();
 
     var comboTxt = combo ? ' Combo ×1,5 !' : '';
+    if (usedClue) comboTxt += ' (indice utilisé : points réduits)';
     var rankTxt = ' Tu fais mieux que ' + percentile() + ' % des visiteurs.';
     if (found === VALUES.length) {
       setFeedback('Seize sur seize, ' + score + ' pts, top ' + Math.max(100 - percentile(), 1) + ' % des visiteurs. On est faits pour s\'entendre : descends jusqu\'au contact !', 'ok');
@@ -1256,7 +1302,6 @@ document.addEventListener('DOMContentLoaded', function () {
     revealBtn.addEventListener('click', function () {
       if (revealedAll) return;
       revealedAll = true;
-      score = 0; /* honesty of the scoreboard: revealing is not playing */
       lastLevelIdx = 3; /* keep the level flash quiet during the wave */
       showLevelUp('Pas grave : l\'essentiel, c\'est d\'avoir tenté.');
       var hidden = VALUES.filter(function (v) { return !v.found; });
@@ -1272,7 +1317,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
           if (i === hidden.length - 1) {
             updateHud();
-            setFeedback('Les seize valeurs sont là. Clique sur une carte pour explorer son chapitre.', '');
+            setFeedback('Les seize valeurs sont là. Ton classement reste basé sur les ' + earnedFound + ' que tu as devinées. Clique sur une carte pour explorer son chapitre.', '');
           }
         }, 900 + i * 120);
       });
@@ -1334,18 +1379,23 @@ document.addEventListener('DOMContentLoaded', function () {
       if (v.found || e.target.closest('a')) return;
       v.hintShown = true;
       var letterEl = v.card.querySelector('.vg-letter');
-      if (letterEl) letterEl.textContent = 'Indice : « ' + v.name.charAt(0) + '… »';
+      if (letterEl) letterEl.textContent = hintLetters(v);
       v.card.classList.remove('peek');
       void v.card.offsetWidth;
       v.card.classList.add('peek');
-      setFeedback('Cette carte commence par « ' + v.name.charAt(0) + ' ». À toi de jouer.', '');
+      var remainNow = VALUES.length - found;
+      if (remainNow < 5) {
+        setFeedback('Cette carte commence par « ' + v.name.charAt(0) + ' » et finit par « ' + v.name.charAt(v.name.length - 1) + ' ». À toi de jouer.', '');
+      } else {
+        setFeedback('Cette carte commence par « ' + v.name.charAt(0) + ' ». À toi de jouer.', '');
+      }
       if (input && finePointerVg) input.focus();
     });
   });
 
   /* level-up flash */
   var lvlOverlay = null, lastLevelIdx = 0;
-  function levelIdx() { return found >= 12 ? 3 : found >= 8 ? 2 : found >= 4 ? 1 : 0; }
+  function levelIdx() { return earnedFound >= 12 ? 3 : earnedFound >= 8 ? 2 : earnedFound >= 4 ? 1 : 0; }
   function showLevelUp(text) {
     if (reduceFx) return;
     if (!lvlOverlay) {
@@ -1408,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var baseUpdateHud = updateHud;
   updateHud = function () {
     baseUpdateHud();
-    if (revealedAll) {
+    if (revealedAll && earnedFound === 0) {
       if (rankEl) rankEl.textContent = 'Dernier';
       if (levelEl) levelEl.textContent = 'Niv. 0 · Spectateur';
     }
