@@ -981,9 +981,9 @@ document.addEventListener('DOMContentLoaded', function () {
     { name: 'Curiosité', clue: 'L\'envie d\'apprendre et de comprendre comment tout fonctionne, encore et encore.', syns: ['apprendre', 'apprentissage', 'decouverte', 'soif d apprendre', 'curieux', 'creativite', 'creatif', 'innovation', 'innovant', 'imagination', 'veille', 'apprendre vite', 'esprit d innovation'], why: 'Comprendre comment chaque chose fonctionne, des marchés aux personnes.', href: '#investissement' },
     { name: 'Énergie', clue: 'Ce que Red Bull est censé donner, et que j\'apporte déjà au réveil.', syns: ['dynamisme', 'dynamique', 'enthousiasme', 'motivation', 'motive', 'punch', 'passion', 'passionne', 'proactivite', 'proactif', 'entrain', 'peps', 'vitalite', 'implication', 'bonne humeur', 'sourire', 'positif', 'positivite', 'optimisme', 'optimiste', 'joie de vivre', 'engagement'], why: 'Student Marketeer Red Bull : l\'énergie, c\'est littéralement le métier.', href: '#redbull' },
     { name: 'Patience', clue: 'Laisser le temps faire son travail plutôt que de tout vouloir tout de suite.', syns: ['long terme', 'temps long', 'temperance', 'patient', 'endurance'], why: 'Investir sur la durée m\'a appris que le temps travaille pour moi.', href: '#investissement' },
-    { name: 'Humilité', clue: 'Savoir dire « je ne sais pas » et repartir apprendre.', syns: ['modestie', 'modeste', 'remise en question', 'humble', 'simplicite', 'apprendre de ses erreurs', 'remise en cause'], why: 'Nouvelle culture, nouvel accent : j\'ai réappris à écouter avant de parler.', href: '#international' },
+    { name: 'Humilité', clue: 'Savoir dire « je ne sais pas » et repartir apprendre.', syns: ['modestie', 'modeste', 'remise en question', 'humble', 'simplicite', 'apprendre de ses erreurs', 'remise en cause'], why: 'Nouvelle culture, nouvel accent : j\'ai accepté de repartir de zéro.', href: '#international' },
     { name: 'Adaptabilité', clue: 'Changer de plan sans changer d\'objectif quand l\'imprévu débarque.', syns: ['flexibilite', 'flexible', 'agilite', 'agile', 'polyvalence', 'polyvalent', 'adaptation', 'souplesse', 'reactivite', 'reactif', 'gestion du changement', 'changement', 'debrouillardise', 'debrouillard'], why: 'Terrain, imprévus, publics différents : je m\'ajuste vite et avec le sourire.', href: '#redbull' },
-    { name: 'Dépassement de soi', clue: 'Monter sur le ring alors que la peur dit de rester assis.', syns: ['depassement', 'ambition', 'ambitieux', 'perseverance', 'perseverant', 'resilience', 'resilient', 'determination', 'determine', 'courage', 'courageux', 'travail', 'travailleur', 'effort', 'combativite', 'volonte', 'audace', 'audacieux', 'gout du defi', 'defi', 'challenge', 'tenacite', 'tenace', 'ne rien lacher', 'grinta', 'competitif', 'gagneur'], why: 'Victoire par TKO au premier round : la peur se travaille comme un muscle.', href: '#depassement' },
+    { name: 'Dépassement de soi', clue: 'Monter sur le ring alors que la peur dit de rester assis.', syns: ['depassement', 'ambition', 'ambitieux', 'perseverance', 'perseverant', 'resilience', 'resilient', 'determination', 'determine', 'courage', 'courageux', 'travail', 'travailleur', 'effort', 'combativite', 'volonte', 'audace', 'audacieux', 'gout du defi', 'defi', 'challenge', 'tenacite', 'tenace', 'ne rien lacher', 'grinta', 'competitif', 'gagneur'], why: 'Monter sur le ring malgré la peur : elle se travaille comme un muscle.', href: '#depassement' },
     { name: 'Transmettre', clue: 'Partager ce qu\'on sait pour donner envie aux autres d\'essayer.', syns: ['transmission', 'pedagogie', 'pedagogue', 'partage', 'partager', 'enseigner', 'mentorat', 'former', 'formation', 'accompagnement', 'aider les autres', 'aider'], why: 'Ambassadeur UJM : donner envie à d\'autres de tenter l\'aventure.', href: '#ujm' },
     { name: 'Confiance', clue: 'Déléguer sans surveiller par-dessus l\'épaule, et tenir sa parole.', syns: ['deleguer', 'delegation', 'fiabilite', 'fiable', 'loyaute', 'loyal', 'honnetete', 'honnete', 'integrite', 'integre', 'autonomie', 'autonome', 'responsabilite', 'responsable', 'transparence', 'franchise', 'franc', 'droiture', 'sincerite', 'sincere', 'parole tenue'], why: 'Déléguer sans lâcher : la grande leçon de mon année de présidence.', href: '#bde' },
     { name: 'Contact humain', clue: 'Aller vers les gens et créer du lien partout, tout le temps.', syns: ['contact', 'relationnel', 'communication', 'communicant', 'humain', 'sociabilite', 'sociable', 'relation', 'social', 'convivialite', 'networking', 'reseautage', 'aisance relationnelle', 'sens du contact', 'sympathie', 'sympathique', 'chaleureux', 'extraverti', 'charisme', 'charismatique'], why: 'Aller vers les gens et sentir l\'énergie d\'un groupe, c\'est ce que je préfère.', href: '#redbull' },
@@ -1275,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', function () {
     toastShown = true;
     var t = document.createElement('div');
     t.className = 'vg-toast';
-    t.textContent = 'Pas de pression : continue de visiter le site, chaque chapitre est un indice grandeur nature. Reviens finir le jeu quand tu veux, il t\'attend ici.';
+    t.textContent = 'Pas de pression : continuez de visiter le site, chaque chapitre est un indice grandeur nature. Revenez finir le jeu quand vous voulez, il vous attend ici.';
     document.body.appendChild(t);
     requestAnimationFrame(function () { t.classList.add('show'); });
     setTimeout(function () {
@@ -1327,7 +1327,7 @@ document.addEventListener('DOMContentLoaded', function () {
       form.classList.remove('shake');
       void form.offsetWidth;
       form.classList.add('shake');
-      setFeedback('« ' + raw + ' » ? On va faire comme si je n\'avais rien lu. Vise une qualité, une vraie.', 'miss');
+      setFeedback('« ' + raw + ' » ? On va faire comme si je n\'avais rien lu. Tentez plutôt une qualité.', 'miss');
       nudgeIfStuck();
       return;
     }
@@ -1335,7 +1335,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (m && m.v.found) {
       stuckCount++;
-      setFeedback('« ' + m.v.name + ' » est déjà retournée, on pense pareil. Tente une carte encore cachée !', '');
+      setFeedback('« ' + m.v.name + ' » est déjà retournée, on pense pareil. Tentez une carte encore cachée !', '');
       nudgeIfStuck();
       return;
     }
@@ -1346,7 +1346,7 @@ document.addEventListener('DOMContentLoaded', function () {
       void form.offsetWidth;
       form.classList.add('shake');
       stuckCount++;
-      setFeedback('Je ne vois pas encore le lien avec « ' + raw + ' »… vise un trait humain (écoute, rigueur, audace, vision).', 'miss');
+      setFeedback('Je ne vois pas encore le lien avec « ' + raw + ' »… visez un trait humain (écoute, rigueur, audace, vision).', 'miss');
       nudgeIfStuck();
       return;
     }
@@ -1367,9 +1367,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var comboTxt = combo ? ' Combo ×1,5 !' : '';
     if (usedClue) comboTxt += ' (indice utilisé : points réduits)';
-    var rankTxt = ' Tu fais mieux que ' + percentile() + ' % des visiteurs.';
+    var rankTxt = ' Vous faites mieux que ' + percentile() + ' % des visiteurs.';
     if (found === VALUES.length) {
-      setFeedback('Seize sur seize, ' + score + ' pts, top ' + Math.max(100 - percentile(), 1) + ' % des visiteurs. On est faits pour s\'entendre : descends jusqu\'au contact !', 'ok');
+      setFeedback('Seize sur seize, ' + score + ' pts, top ' + Math.max(100 - percentile(), 1) + ' % des visiteurs. On est faits pour s\'entendre : descendez jusqu\'au contact !', 'ok');
       var c = centerOf(form);
       burst(c.x, c.y, 90, FX_COLORS);
     } else if (m.tier === 1) {
@@ -1389,7 +1389,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (revealedAll) return;
       revealedAll = true;
       lastLevelIdx = 3; /* keep the level flash quiet during the wave */
-      showLevelUp('Pas grave : l\'essentiel, c\'est d\'avoir tenté.');
+      showLevelUp('Les seize valeurs sont révélées.');
       var hidden = VALUES.filter(function (v) { return !v.found; });
       hidden.forEach(function (v, i) {
         setTimeout(function () {
@@ -1403,11 +1403,11 @@ document.addEventListener('DOMContentLoaded', function () {
           }
           if (i === hidden.length - 1) {
             updateHud();
-            setFeedback('Les seize valeurs sont là. Ton classement reste basé sur les ' + earnedFound + ' que tu as devinées. Clique sur une carte pour explorer son chapitre.', '');
+            setFeedback('Les seize valeurs sont là. Votre classement reste basé sur les ' + earnedFound + ' que vous avez devinées. Cliquez sur une carte pour explorer son chapitre.', '');
           }
         }, 900 + i * 120);
       });
-      if (!hidden.length) setFeedback('Tout est déjà révélé. Clique sur une carte pour explorer son chapitre.', '');
+      if (!hidden.length) setFeedback('Tout est déjà révélé. Cliquez sur une carte pour explorer son chapitre.', '');
     });
   }
 
@@ -1471,9 +1471,9 @@ document.addEventListener('DOMContentLoaded', function () {
       v.card.classList.add('peek');
       var remainNow = VALUES.length - found;
       if (remainNow < 5) {
-        setFeedback('Cette carte commence par « ' + v.name.charAt(0) + ' » et finit par « ' + v.name.charAt(v.name.length - 1) + ' ». À toi de jouer.', '');
+        setFeedback('Cette carte commence par « ' + v.name.charAt(0) + ' » et finit par « ' + v.name.charAt(v.name.length - 1) + ' ». À vous de jouer.', '');
       } else {
-        setFeedback('Cette carte commence par « ' + v.name.charAt(0) + ' ». À toi de jouer.', '');
+        setFeedback('Cette carte commence par « ' + v.name.charAt(0) + ' ». À vous de jouer.', '');
       }
       if (input && finePointerVg) input.focus();
     });
@@ -1515,7 +1515,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var h = document.createElement('h4');
     h.textContent = 'Match parfait.';
     var p = document.createElement('p');
-    p.innerHTML = 'Tu viens de dresser mon portrait en <span class="vg-final-score">' + score + ' pts</span>, top ' + Math.max(100 - percentile(), 1) + ' % des visiteurs. Si mes valeurs te parlent autant, on devrait discuter.';
+    p.innerHTML = 'Vous venez de dresser mon portrait en <span class="vg-final-score">' + score + ' pts</span>, top ' + Math.max(100 - percentile(), 1) + ' % des visiteurs. Si mes valeurs vous parlent autant, on devrait discuter.';
     var cta = document.createElement('a');
     cta.className = 'btn btn-primary';
     cta.href = '#contact';
@@ -1544,10 +1544,6 @@ document.addEventListener('DOMContentLoaded', function () {
   var baseUpdateHud = updateHud;
   updateHud = function () {
     baseUpdateHud();
-    if (revealedAll && earnedFound === 0) {
-      if (rankEl) rankEl.textContent = 'Dernier';
-      if (levelEl) levelEl.textContent = 'Niv. 0 · Spectateur';
-    }
     var idx = levelIdx();
     if (idx > lastLevelIdx && found < VALUES.length) {
       lastLevelIdx = idx;
